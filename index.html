@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- 进入时间：全黑遮罩 -->
+  <!-- 进入时间：黑屏遮罩 -->
   <div id="intro">
     <button id="enter-btn">进入时间</button>
   </div>
@@ -16,17 +16,24 @@
   <div id="scene">
     <canvas id="space-canvas"></canvas>
 
-    <!-- 底部引导文字 -->
+    <!-- 底部引导文案 -->
     <div id="hint">改变视角，看看有什么不同</div>
 
     <!-- 回到初始视角 -->
     <button id="reset-view">回到初始视角</button>
+
+    <!-- BEFORE / NOW 对比标签（只有点击“回到初始视角”后短暂出现） -->
+    <div id="compare-labels">
+      <div class="label before">BEFORE</div>
+      <div class="label now">NOW</div>
+    </div>
   </div>
 
-  <!-- 背景音乐（静音自动加载，点击“进入时间”后尝试播放） -->
+  <!-- 背景音乐（可选：自己加 mp3 改 src 即可） -->
   <audio id="bgm" loop>
-    <!-- 你可以把自己的音乐 mp3 上传到仓库里，例如 bgm.mp3，然后改成： -->
-    <!-- <source src="bgm.mp3" type="audio/mpeg" /> -->
+    <!--
+    <source src="bgm.mp3" type="audio/mpeg" />
+    -->
   </audio>
 
   <script src="main.js"></script>
