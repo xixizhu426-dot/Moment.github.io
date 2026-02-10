@@ -1,12 +1,16 @@
 :root {
-  --bg: #02030a;
-  --star-color: rgba(255, 255, 255, 0.7);
-  --orbit-color: rgba(255, 255, 255, 0.32);
-  --orbit-delta-color: rgba(173, 216, 255, 0.55);
-  --planet-core: #f5f7ff;
-  --accent: #f5f5f5;
-  --accent-soft: rgba(255, 255, 255, 0.72);
-  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.75);
+  --bg-color: #050813;
+  --hint-bg: rgba(0, 0, 0, 0.4);
+  --hint-border: rgba(255, 255, 255, 0.18);
+  --hint-text: rgba(255, 255, 255, 0.8);
+  --btn-bg: rgba(0, 0, 0, 0.55);
+  --btn-border: rgba(255, 255, 255, 0.3);
+  --btn-text: #ffffff;
+  --track-color: rgba(255, 255, 255, 0.12);
+  --planet-main: #f6f3ff;
+  --planet-1: #ffd47f;
+  --planet-2: #9ec7ff;
+  --planet-3: #7fe8c9;
 }
 
 *,
@@ -19,184 +23,114 @@ html,
 body {
   margin: 0;
   padding: 0;
+  width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
-  color: #fff;
+  background: #000;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
     sans-serif;
 }
 
-/* 画布全屏 */
-#space {
+/* ---------------- 进入时间遮罩 ---------------- */
+
+#intro {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
-  display: block;
-  background: radial-gradient(circle at 50% 18%, #0a1226 0, #02030a 55%, #000 100%);
-}
-
-/* 进入时间按钮 */
-.enter-btn {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 14px 40px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: rgba(0, 0, 0, 0.78);
-  color: #fff;
-  font-size: 16px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  cursor: pointer;
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-soft);
-  transition: opacity 0.4s ease, transform 0.4s ease, background 0.3s ease,
-    box-shadow 0.3s ease;
-  z-index: 20;
-}
-
-.enter-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.9);
-}
-
-.enter-btn.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -46%);
-}
-
-/* 回到初始视角 */
-.reset-btn {
-  position: fixed;
-  right: 32px;
-  top: 32px;
-  padding: 9px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(0, 0, 0, 0.7);
-  color: var(--accent-soft);
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
-  z-index: 20;
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.reset-btn.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-6px);
-}
-
-/* 底部提示文案 */
-.hint {
-  position: fixed;
-  left: 50%;
-  bottom: 40px;
-  transform: translateX(-50%);
-  padding: 10px 24px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(0, 0, 0, 0.75);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.85);
-  z-index: 20;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.hint.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(8px);
-}
-
-/* 鼠标交互提示（略微） */
-body.started {
-  cursor: grab;
-}
-body.dragging {
-  cursor: grabbing;
-}
-
-/* 对比面板：Before / Now */
-.compare {
-  position: fixed;
-  left: 50%;
-  bottom: 40px;
-  transform: translateX(-50%);
+  background: #000;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 10px 18px;
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.9);
-  z-index: 50;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity 1.2s ease;
 }
 
-.compare.hidden {
+#intro.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(10px);
 }
 
-.compare-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.compare-label {
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.compare img {
-  width: 120px;
-  height: 68px;
-  border-radius: 10px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: #02030a;
-}
-
-.compare-close {
-  border: none;
+#enter-btn {
+  padding: 14px 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
+  color: #ffffff;
+  font-size: 18px;
+  letter-spacing: 4px;
   cursor: pointer;
-  padding: 0 2px 2px;
+  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease,
+    transform 0.25s ease;
 }
 
-/* 小屏幕适配 */
-@media (max-width: 640px) {
-  .reset-btn {
-    right: 16px;
-    top: 18px;
-  }
-  .hint,
-  .compare {
-    bottom: 24px;
-  }
-  .compare img {
-    width: 96px;
-    height: 58px;
-  }
+#enter-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ---------------- 场景 & 画布 ---------------- */
+
+#scene {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at top, #11182b 0%, #050813 55%, #02030a 100%);
+}
+
+#space-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------------- 底部提示文案 ---------------- */
+
+#hint {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  padding: 10px 26px;
+  border-radius: 999px;
+  background: var(--hint-bg);
+  border: 1px solid var(--hint-border);
+  color: var(--hint-text);
+  font-size: 14px;
+  letter-spacing: 2px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+/* ---------------- 回到初始视角按钮 ---------------- */
+
+#reset-view {
+  position: absolute;
+  top: 26px;
+  right: 30px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: 13px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#reset-view:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* 防止页面出现滚动条 */
+body {
+  overscroll-behavior: none;
 }
