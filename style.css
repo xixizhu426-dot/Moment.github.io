@@ -1,176 +1,110 @@
-:root {
-  --bg-color: #050813;
-  --hint-bg: rgba(0, 0, 0, 0.4);
-  --hint-border: rgba(255, 255, 255, 0.18);
-  --hint-text: rgba(255, 255, 255, 0.8);
-  --btn-bg: rgba(0, 0, 0, 0.55);
-  --btn-border: rgba(255, 255, 255, 0.3);
-  --btn-text: #ffffff;
-  --track-color: rgba(255, 255, 255, 0.15);
-  --track-before: rgba(129, 178, 255, 0.32); /* 初始轨道（对比时用） */
-  --planet-main: #f6f3ff;
-  --planet-1: #ffd47f;
-  --planet-2: #9ec7ff;
-  --planet-3: #7fe8c9;
-}
+/* ============ 页面基础设置：全屏 + 无滚动 ============ */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #000;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
-    sans-serif;
+  background: #000; /* 首屏纯黑，后面 canvas 会盖上来 */
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
 }
 
-/* ---------- 进入时间遮罩 ---------- */
+/* ============ 全屏 Canvas（默认透明，点击后淡入） ============ */
 
-#intro {
+#space {
   position: fixed;
-  inset: 0;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: opacity 1.2s ease;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  z-index: 1;
 }
 
-#intro.hidden {
-  opacity: 0;
-  pointer-events: none;
+/* body.started 说明用户已经点击了“进入时间” */
+body.started #space {
+  opacity: 1;
 }
+
+/* ============ 进入时间按钮 ============ */
 
 #enter-btn {
-  padding: 14px 46px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: transparent;
-  color: #ffffff;
-  font-size: 18px;
-  letter-spacing: 4px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1.4px solid rgba(255, 255, 255, 0.5);
+  padding: 18px 42px;
   cursor: pointer;
-  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease,
-    transform 0.25s ease;
+  letter-spacing: 0.12em;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  z-index: 20;
 }
 
 #enter-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: #ffffff;
-  transform: translateY(-1px);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
-/* ---------- 场景 & 画布 ---------- */
+/* ============ 回到初始视角按钮 ============ */
 
-#scene {
+#resetView {
   position: fixed;
-  inset: 0;
-  background: radial-gradient(circle at top, #11182b 0%, #050813 55%, #02030a 100%);
+  top: 32px;
+  right: 32px;
+  padding: 10px 22px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1.2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  backdrop-filter: blur(12px);
+  z-index: 15;
+  transition: opacity 0.6s ease, background 0.2s ease;
 }
 
-#space-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+#resetView:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
-/* ---------- 底部提示文字 ---------- */
+/* ============ 底部提示文案 ============ */
 
 #hint {
-  position: absolute;
+  position: fixed;
+  bottom: 32px;
   left: 50%;
-  bottom: 40px;
   transform: translateX(-50%);
-  padding: 10px 26px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.12em;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
   border-radius: 999px;
-  background: var(--hint-bg);
-  border: 1px solid var(--hint-border);
-  color: var(--hint-text);
-  font-size: 14px;
-  letter-spacing: 2px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* ---------- 回到初始视角按钮 ---------- */
-
-#reset-view {
-  position: absolute;
-  top: 26px;
-  right: 30px;
-  padding: 8px 20px;
-  border-radius: 999px;
-  border: 1px solid var(--btn-border);
-  background: var(--btn-bg);
-  color: var(--btn-text);
-  font-size: 13px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease,
-    box-shadow 0.2s ease;
-  z-index: 2;
-}
-
-#reset-view:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* ---------- BEFORE / NOW 标签 ---------- */
-
-#compare-labels {
-  position: absolute;
-  left: 50%;
-  bottom: 78px;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 40px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.6s ease;
-  z-index: 2;
-}
-
-#compare-labels.show {
-  opacity: 1;
-}
-
-#compare-labels .label {
-  padding: 4px 14px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(0, 0, 0, 0.45);
-  color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  transition: opacity 0.6s ease;
+  z-index: 18;
 }
 
-#compare-labels .before {
-  border-color: rgba(129, 178, 255, 0.7);
-  color: rgba(173, 206, 255, 0.95);
+/* ============ 通用隐藏状态 ============ */
+
+.hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-/* 防止出现滚动条 */
-body {
-  overscroll-behavior: none;
+/* 取消 Mobile 点击高亮 */
+button, div, canvas {
+  -webkit-tap-highlight-color: transparent;
 }
