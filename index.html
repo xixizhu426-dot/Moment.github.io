@@ -7,19 +7,19 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- 进入时间 -->
+  <!-- 首屏：进入时间 -->
   <div id="enter-btn">进入时间</div>
 
-  <!-- 星空 + 轨道 -->
+  <!-- 星空 + 轨道画布 -->
   <canvas id="space"></canvas>
 
-  <!-- 回到初始视角 -->
+  <!-- 回到初始视角按钮（初始隐藏） -->
   <button id="resetView" class="hidden">回到初始视角</button>
 
-  <!-- 交互提示文案 -->
+  <!-- 底部提示文案（初始隐藏） -->
   <div id="hint" class="hidden">改变视角，看看有什么不同</div>
 
-  <!-- 背景音乐：请在仓库根目录上传 bgm.mp3 -->
+  <!-- 背景音乐：你可以在仓库根目录上传 bgm.mp3 -->
   <audio id="bgm" src="bgm.mp3" loop></audio>
 
   <script>
@@ -33,20 +33,21 @@
     resize();
     window.addEventListener("resize", resize);
 
-    // 相机视角 & 缩放（通过 cameraDist 模拟远近）
+    // 相机视角 & 缩放
     let yaw = 0, pitch = 0;
     let targetYaw = 0, targetPitch = 0;
     let cameraDist = 2.6;
     let targetCameraDist = 2.6;
 
-    // 时间：只在“离开页面再回来”时变化
+    // 时间 epoch：只在“离开页面再回来”时 +1
     const EPOCH_KEY = "orbit_epoch_v4";
     let epoch = parseInt(localStorage.getItem(EPOCH_KEY) || "0", 10);
     function saveEpoch() {
       localStorage.setItem(EPOCH_KEY, String(epoch));
     }
 
-    // ---------- 背景星空 ----------
+    // ========== 背景星空 ==========
+
     const STAR_COUNT = 2200;
     const stars = [];
 
@@ -73,7 +74,8 @@
     }
     initStars();
 
-    // ---------- 轨道系统 ----------
+    // ========== 轨道系统 ==========
+
     const DEG = Math.PI / 180;
 
     const orbits = [
@@ -90,9 +92,9 @@
       { orbitIndex: 3, basePhase: 5.2, size: 0.016, color: "#ffe8ff" }
     ];
 
-    // ---------- 投影（相机前后移动 + 旋转） ----------
+    // ========== 投影：考虑相机旋转 + 前后距离 ==========
+
     function projectPoint(px, py, pz) {
-      // 相机旋转前，场景在原点，cameraDist 表示镜头离场景远近
       let x = px;
       let y = py;
       let z = pz;
@@ -102,13 +104,13 @@
       const cosP = Math.cos(pitch);
       const sinP = Math.sin(pitch);
 
-      // 旋转到相机坐标系
+      // 绕 Y
       let x1 = x * cosY - z * sinY;
       let z1 = x * sinY + z * cosY;
+      // 绕 X
       let y1 = y * cosP - z1 * sinP;
       z1 = y * sinP + z1 * cosP;
 
-      // 相机离场景的距离越大，整体越远
       const dist = cameraDist + 1.2;
       const f = 1.0 / (z1 + dist);
 
@@ -124,12 +126,13 @@
       };
     }
 
-    // ---------- 时间驱动参数（只受 epoch 影响，极慢变化） ----------
+    // ========== epoch → 非常缓慢的参数变化 ==========
+
     function getTimeParams() {
-      const MAX_EPOCH = 240; // 240 次离开再回来才绕一圈
+      const MAX_EPOCH = 240; // 240 次“离开再回来”绕一圈
       const p = (epoch % MAX_EPOCH) / MAX_EPOCH; // 0~1
 
-      // 轨道整体倾角：-4° ~ +4°（很轻微）
+      // 轨道整体倾角：-4° ~ +4°
       const tiltAmp = 4 * DEG;
       const tiltGlobal = (p * 2 - 1) * tiltAmp;
 
@@ -140,13 +143,12 @@
       const twAmp = 5 * DEG;
       const twistGlobal = (p * 2 - 1) * twAmp;
 
-      // 行星整体相位偏移：只偏一点点
+      // 行星整体相位偏移：轻微
       const phaseOffset = p * Math.PI * 2 * 0.08;
 
       return { tiltGlobal, ecc, twistGlobal, phaseOffset };
     }
 
-    // ---------- 轨道坐标 ----------
     function orbitPoint(orbit, angle, ecc, tiltGlobal, twistGlobal) {
       const radius = orbit.radius;
       const localTilt = tiltGlobal + (orbit.tiltOffset || 0);
@@ -162,30 +164,29 @@
       let y1 = x0 * sinTw + y0 * cosTw;
       let z1 = 0;
 
-      // 倾斜（绕 X）
+      // 倾角（绕 X）
       const cosT = Math.cos(localTilt);
       const sinT = Math.sin(localTilt);
       let y2 = y1 * cosT - z1 * sinT;
       let z2 = y1 * sinT + z1 * cosT;
 
-      // 增加厚度，增强空间感
+      // 略微加厚增强 3D 感
       z2 *= 1.7;
 
       return { x: x1, y: y2, z: z2 };
     }
 
-    // ---------- 交互：旋转 & 缩放 ----------
+    // ========== 交互：旋转、缩放 ==========
+
     let dragging = false;
     let lastX = 0, lastY = 0;
-    let hasInteracted = false; // 用来隐藏提示文案
+    let hasInteracted = false;
     const hint = document.getElementById("hint");
 
     function userInteracted() {
       if (!hasInteracted) {
         hasInteracted = true;
-        if (hint) {
-          hint.classList.add("hidden");
-        }
+        if (hint) hint.classList.add("hidden");
       }
     }
 
@@ -212,7 +213,7 @@
       targetPitch = Math.max(-limit, Math.min(limit, targetPitch));
     });
 
-    // 触摸
+    // 触摸旋转
     canvas.addEventListener("touchstart", (e) => {
       if (e.touches.length !== 1) return;
       const t = e.touches[0];
@@ -239,14 +240,14 @@
       dragging = false;
     });
 
-    // 滚轮缩放
+    // 滚轮缩放（相机远近）
     window.addEventListener("wheel", (e) => {
       const delta = e.deltaY > 0 ? 0.18 : -0.18;
       targetCameraDist = Math.min(4.2, Math.max(1.6, targetCameraDist + delta));
       userInteracted();
     }, { passive: true });
 
-    // 标签页切走再回来 → epoch + 1（唯一时间入口）
+    // 标签页切走再回来 → epoch + 1
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         epoch++;
@@ -254,11 +255,11 @@
       }
     });
 
-    // ---------- 主绘制 ----------
+    // ========== 主绘制循环 ==========
+
     function draw() {
       requestAnimationFrame(draw);
 
-      // 平滑相机运动
       const lerp = 0.08;
       yaw += (targetYaw - yaw) * lerp;
       pitch += (targetPitch - pitch) * lerp;
@@ -270,7 +271,7 @@
       ctx.fillStyle = "#02040b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // ----- 背景星空（近层随 cameraDist 变化更明显，远层几乎不动） -----
+      // 背景星空
       for (const s of stars) {
         const p = projectPoint(s.x, s.y, s.z);
         if (p.depth > 4) continue;
@@ -282,7 +283,7 @@
         ctx.fillRect(p.sx, p.sy, 1.0, 1.0);
       }
 
-      // ----- 画轨道线 -----
+      // 轨道线
       for (const orbit of orbits) {
         ctx.beginPath();
         const steps = 140;
@@ -304,7 +305,7 @@
         ctx.stroke();
       }
 
-      // ----- 中央恒星 -----
+      // 中央恒星
       const core = projectPoint(0, 0, 0);
       const coreRadius = 6 / cameraDist;
       const grad = ctx.createRadialGradient(
@@ -318,7 +319,7 @@
       ctx.arc(core.sx, core.sy, coreRadius * 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // ----- 行星：在每个 epoch 内是静止的，只跟 epoch 有关 -----
+      // 行星（在每个 epoch 内静止）
       for (const pl of planets) {
         const orbit = orbits[pl.orbitIndex];
         const angle = pl.basePhase + phaseOffset;
@@ -337,17 +338,24 @@
       }
     }
 
-    // ---------- 按钮 & BGM ----------
+    // ========== 按钮 & BGM & 首屏动画 ==========
+
     const enterBtn = document.getElementById("enter-btn");
     const resetBtn = document.getElementById("resetView");
     const bgm = document.getElementById("bgm");
 
     enterBtn.addEventListener("click", () => {
+      // 给 body 加上 started，用于控制 canvas 淡入
+      document.body.classList.add("started");
+
+      // 按钮淡出
       enterBtn.classList.add("hidden");
+
+      // 显示“回到初始视角”和提示文案
       resetBtn.classList.remove("hidden");
-      if (hint) {
-        hint.classList.remove("hidden"); // 显示提示文案
-      }
+      if (hint) hint.classList.remove("hidden");
+
+      // 放音乐（如果有）
       if (bgm) {
         bgm.volume = 0.5;
         bgm.play().catch(() => {});
