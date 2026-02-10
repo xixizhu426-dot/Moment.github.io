@@ -1,4 +1,4 @@
-/* ============ 页面基础设置 ============ */
+/* ============ 页面基础设置：全屏 + 无滚动 ============ */
 
 html, body {
   margin: 0;
@@ -6,26 +6,34 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #02040b; /* 深空背景主色 */
+  background: #000; /* 首屏纯黑，后面 canvas 会盖上来 */
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   user-select: none;
 }
 
-/* ============ 全屏 Canvas ============ */
+/* ============ 全屏 Canvas（默认透明，点击后淡入） ============ */
 
 #space {
-  width: 100%;
-  height: 100%;
-  display: block;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  z-index: 1;
+}
+
+/* body.started 说明用户已经点击了“进入时间” */
+body.started #space {
+  opacity: 1;
 }
 
 /* ============ 进入时间按钮 ============ */
 
 #enter-btn {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -50,7 +58,7 @@ html, body {
 /* ============ 回到初始视角按钮 ============ */
 
 #resetView {
-  position: absolute;
+  position: fixed;
   top: 32px;
   right: 32px;
   padding: 10px 22px;
@@ -63,23 +71,17 @@ html, body {
   letter-spacing: 0.1em;
   backdrop-filter: blur(12px);
   z-index: 15;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.6s ease, background 0.2s ease;
 }
 
 #resetView:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* 初始隐藏 */
-.hidden {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
 /* ============ 底部提示文案 ============ */
 
 #hint {
-  position: absolute;
+  position: fixed;
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
@@ -95,8 +97,14 @@ html, body {
   z-index: 18;
 }
 
-/* ============ 禁止拖动图片 / 按钮闪烁等 ============ */
+/* ============ 通用隐藏状态 ============ */
 
+.hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 取消 Mobile 点击高亮 */
 button, div, canvas {
   -webkit-tap-highlight-color: transparent;
 }
