@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>眨眼之间 · In the Blink of an Eye</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 初始黑屏层 -->
+  <div id="intro-layer">
+    <button id="enter-time-btn">进入时间</button>
+  </div>
+
+  <!-- 星空粒子场景 -->
+  <div class="scene">
+    <div id="sky">
+      <div class="milky-way"></div>
+      <div id="stars"></div>
+      <div class="sky-glow"></div>
+    </div>
+
+    <div class="bottom-text">眨眼之间。</div>
+
+    <button id="reset-view-btn" title="回到最初视角">
+      ⟳
+    </button>
+  </div>
+
+  <!-- 背景音乐（请将 music.mp3 替换为你自己的音频文件路径） -->
+  <audio id="bgm" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script src="main.js"></script>
+</body>
+</html>
