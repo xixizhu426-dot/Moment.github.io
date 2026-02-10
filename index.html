@@ -31,7 +31,7 @@
       z-index: 1;
     }
 
-    /* ============ 行星轨迹覆盖层 ============ */
+    /* ============ 行星轨迹覆盖层（只画轨迹） ============ */
     #trail {
       position: fixed;
       top: 0;
@@ -125,11 +125,11 @@
 
     #compare-panel.active {
       opacity: 1;
-      pointer-events: none; /* 让事件透过去，不打断交互 */
+      pointer-events: none; /* 事件透传，不打断交互 */
     }
 
     .compare-inner {
-      pointer-events: auto; /* 内部按钮可点击 */
+      pointer-events: auto; /* 内部按钮可点 */
       max-width: min(720px, 92vw);
       width: 100%;
       background: rgba(10, 12, 24, 0.95);
@@ -287,20 +287,26 @@
     resize();
     window.addEventListener("resize", resize);
 
-    // 相机视角 & 缩放（初始视角）
-    let yaw = 0, pitch = 0;
-    let targetYaw = 0, targetPitch = 0;
-    let cameraDist = 2.6;
-    let targetCameraDist = 2.6;
+    /* ====== 初始相机视角，统一管理 ====== */
+    const INITIAL_YAW = 0;
+    const INITIAL_PITCH = 0;
+    const INITIAL_DIST = 2.6;
 
-    // 时间 epoch：离开再回来才会改变（整体结构慢变）
+    let yaw = INITIAL_YAW;
+    let pitch = INITIAL_PITCH;
+    let targetYaw = INITIAL_YAW;
+    let targetPitch = INITIAL_PITCH;
+    let cameraDist = INITIAL_DIST;
+    let targetCameraDist = INITIAL_DIST;
+
+    // epoch：tab 切回才 +1，用来慢速改变整体结构
     const EPOCH_KEY = "orbit_epoch_v4";
     let epoch = parseInt(localStorage.getItem(EPOCH_KEY) || "0", 10);
     function saveEpoch() {
       localStorage.setItem(EPOCH_KEY, String(epoch));
     }
 
-    // 全局时间：行星随停留时间慢慢运动
+    // 全局时间：行星随停留时间运动
     const startTime = performance.now();
 
     // ========== 背景星空 ==========
@@ -346,7 +352,7 @@
       { orbitIndex: 2, basePhase: 3.8, size: 0.014, color: "#ffd9a0" },
       { orbitIndex: 3, basePhase: 5.2, size: 0.016, color: "#ffe8ff" }
     ];
-    // 行星角速度（弧度/秒）——慢一点，让变化更“难察觉”
+    // 行星角速度（弧度/秒）
     const planetSpeeds = [0.06, 0.045, 0.035, 0.028];
 
     // ========== 投影 ==========
@@ -426,12 +432,19 @@
       return { x: x1, y: y2, z: z2 };
     }
 
-    // ========== 轨迹记录：记录画面中行星的运动 ==========
-    const planetTrails = planets.map(() => []); // 每颗行星一条轨迹
+    /* ====== 行星当前角度（世界里的“走到哪儿了”） ====== */
+    function getCurrentPlanetAngles() {
+      const tSec = (performance.now() - startTime) / 1000;
+      const { phaseOffset } = getTimeParams();
+      return planets.map((pl, idx) => pl.basePhase + phaseOffset + tSec * planetSpeeds[idx]);
+    }
+
+    // ========== 轨迹记录（按角度记录起点和终点） ==========
     let recordingTrails = false;
+    let trailStartAngles = null;
 
     function startRecordingTrails() {
-      for (const t of planetTrails) t.length = 0;
+      trailStartAngles = getCurrentPlanetAngles();
       recordingTrails = true;
       clearTrailCanvas();
     }
@@ -444,8 +457,11 @@
       trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
     }
 
-    function drawPlanetTrails() {
+    function drawPlanetTrailsFromAngles(startAngles, endAngles) {
+      if (!startAngles || !endAngles) return;
       clearTrailCanvas();
+
+      const { tiltGlobal, ecc, twistGlobal } = getTimeParams();
       const colors = [
         "rgba(245,245,255,0.9)",
         "rgba(179,217,255,0.9)",
@@ -453,22 +469,35 @@
         "rgba(255,232,255,0.9)"
       ];
 
-      planetTrails.forEach((trail, idx) => {
-        if (trail.length < 2) return;
+      planets.forEach((pl, index) => {
+        const orbit = orbits[pl.orbitIndex];
+        let a0 = startAngles[index];
+        let a1 = endAngles[index];
+        if (!isFinite(a0) || !isFinite(a1)) return;
+
+        // 处理 2π 裹绕，让轨迹是顺着行星前进方向的一段弧线
+        while (a1 < a0) a1 += Math.PI * 2;
+
+        const steps = 120;
         trailCtx.beginPath();
-        trail.forEach((p, i) => {
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const a = a0 + (a1 - a0) * t;
+          const pos = orbitPoint(orbit, a, ecc, tiltGlobal, twistGlobal);
+          const p = projectPoint(pos.x, pos.y, pos.z); // 用当前相机（此时已是初始视角）
           if (i === 0) {
-            trailCtx.moveTo(p.x, p.y);
+            trailCtx.moveTo(p.sx, p.sy);
           } else {
-            trailCtx.lineTo(p.x, p.y);
+            trailCtx.lineTo(p.sx, p.sy);
           }
-        });
-        trailCtx.strokeStyle = colors[idx % colors.length];
-        trailCtx.lineWidth = 1.4;
-        trailCtx.shadowColor = colors[idx % colors.length];
-        trailCtx.shadowBlur = 8;
+        }
+        trailCtx.strokeStyle = colors[index % colors.length];
+        trailCtx.lineWidth = 1.6;
+        trailCtx.shadowColor = colors[index % colors.length];
+        trailCtx.shadowBlur = 10;
         trailCtx.stroke();
       });
+
       trailCtx.shadowBlur = 0;
     }
 
@@ -483,9 +512,7 @@
         hasInteracted = true;
         if (hint) hint.classList.add("hidden");
       }
-      if (!recordingTrails) {
-        startRecordingTrails();
-      }
+      // 轨迹记录只从“进入时间”开始，不在每次交互时重置
     }
 
     canvas.addEventListener("mousedown", (e) => {
@@ -554,7 +581,8 @@
     });
 
     // ========== BEFORE / NOW 截图 ==========
-    let initialSnapshot = null;  // 刚进入时间后的“初始一眼”
+    let initialSnapshot = null;
+    let needInitialSnapshot = false;
 
     function captureSnapshot() {
       try {
@@ -576,7 +604,6 @@
       imgNow.src = now;
       comparePanel.classList.add("active");
       if (compareHideTimer) clearTimeout(compareHideTimer);
-      // 几秒后自动淡出，不打断用户继续玩
       compareHideTimer = setTimeout(() => {
         comparePanel.classList.remove("active");
       }, 4500);
@@ -597,8 +624,7 @@
       cameraDist += (targetCameraDist - cameraDist) * lerp;
 
       const { tiltGlobal, ecc, twistGlobal, phaseOffset } = getTimeParams();
-
-      const tSec = (performance.now() - startTime) / 1000; // 秒
+      const tSec = (performance.now() - startTime) / 1000;
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = "#02040b";
@@ -652,27 +678,13 @@
       ctx.arc(core.sx, core.sy, coreRadius * 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // 行星 + 记录“在画面中的运动轨迹”
+      // 行星
       planets.forEach((pl, index) => {
         const orbit = orbits[pl.orbitIndex];
-        // 行星角度 = 初始相位 + epoch 偏移 + 停留时间运动
         const angle = pl.basePhase + phaseOffset + tSec * planetSpeeds[index];
         const pos = orbitPoint(orbit, angle, ecc, tiltGlobal, twistGlobal);
         const p = projectPoint(pos.x, pos.y, pos.z);
         if (p.depth > 3.2) return;
-
-        // 录制轨迹：记录屏幕坐标
-        if (recordingTrails) {
-          const trail = planetTrails[index];
-          const last = trail[trail.length - 1];
-          const dx = last ? p.sx - last.x : 999;
-          const dy = last ? p.sy - last.y : 999;
-          const dist2 = dx * dx + dy * dy;
-          if (!last || dist2 > 9) { // 相隔足够大再记，避免太密
-            if (trail.length > 600) trail.shift();
-            trail.push({ x: p.sx, y: p.sy });
-          }
-        }
 
         const screenSize = pl.size * canvas.height / (p.depth + cameraDist + 2.4);
         const r = Math.max(1.5, screenSize);
@@ -684,6 +696,12 @@
         ctx.fill();
         ctx.shadowBlur = 0;
       });
+
+      // 在“进入时间”后的第一帧截 BEFORE
+      if (needInitialSnapshot && !initialSnapshot) {
+        initialSnapshot = captureSnapshot();
+        needInitialSnapshot = false;
+      }
     }
 
     // ========== 按钮 & BGM & 首屏动画 ==========
@@ -695,16 +713,19 @@
       document.body.classList.add("started");
       enterBtn.classList.add("hidden");
 
+      // 重置到初始视角，保证 BEFORE 的视角是确定的
+      yaw = targetYaw = INITIAL_YAW;
+      pitch = targetPitch = INITIAL_PITCH;
+      cameraDist = targetCameraDist = INITIAL_DIST;
+
       resetBtn.classList.remove("hidden");
       if (hint) hint.classList.remove("hidden");
 
-      // 从初始视角开始录制行星轨迹
+      // 从“进入时间”这一刻开始记录行星角度
       startRecordingTrails();
 
-      // 等星空真正渲染一帧后，记录 BEFORE（刚进入时的一眼）
-      setTimeout(() => {
-        initialSnapshot = captureSnapshot();
-      }, 800);
+      // 第一帧渲染后截 BEFORE
+      needInitialSnapshot = true;
 
       if (bgm) {
         bgm.volume = 0.5;
@@ -714,24 +735,29 @@
 
     // 点击“回到初始视角”
     resetBtn.addEventListener("click", () => {
-      // 1. 停止轨迹录制，画出这段时间行星的运动轨迹
+      if (!recordingTrails || !trailStartAngles) return;
+
+      // 1. 记录当前角度，得到 [进入时间→现在] 的角度变化
+      const trailEndAngles = getCurrentPlanetAngles();
       stopRecordingTrails();
-      drawPlanetTrails();
 
-      // 2. 只重置相机视角，不动时间/行星
-      yaw = targetYaw = 0;
-      pitch = targetPitch = 0;
-      cameraDist = targetCameraDist = 2.6;
+      // 2. 把相机恢复到初始视角（和 BEFORE 一致）
+      yaw = targetYaw = INITIAL_YAW;
+      pitch = targetPitch = INITIAL_PITCH;
+      cameraDist = targetCameraDist = INITIAL_DIST;
 
-      // 3. 下一帧在“初始视角 + 当前行星位置”下截 NOW，并展示对比条
+      // 3. 在“初始视角 + 当前行星位置”这一帧截 NOW，并画出这一段轨迹
       requestAnimationFrame(() => {
+        drawPlanetTrailsFromAngles(trailStartAngles, trailEndAngles); // 纯行星运动轨迹
         const nowShot = captureSnapshot();
         if (initialSnapshot && nowShot) {
           openCompare(initialSnapshot, nowShot);
         }
       });
 
-      // 4. 等用户下一次交互时，会重新 startRecordingTrails()
+      // 如果你只想看这一段的轨迹，不继续累积，可以不再 startRecordingTrails()
+      // 如果想让下一段继续记录，可以在这里重新 startRecordingTrails()
+      // 这里先保留单次体验：不自动重开
     });
 
     requestAnimationFrame(draw);
