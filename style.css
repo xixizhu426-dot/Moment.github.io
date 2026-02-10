@@ -1,110 +1,202 @@
-/* ============ 页面基础设置：全屏 + 无滚动 ============ */
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #000; /* 首屏纯黑，后面 canvas 会盖上来 */
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  user-select: none;
+:root {
+  --bg: #02030a;
+  --star-color: rgba(255, 255, 255, 0.7);
+  --orbit-color: rgba(255, 255, 255, 0.14);
+  --orbit-delta-color: rgba(173, 216, 255, 0.5);
+  --planet-core: #f5f7ff;
+  --accent: #f5f5f5;
+  --accent-soft: rgba(255, 255, 255, 0.72);
+  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.75);
 }
 
-/* ============ 全屏 Canvas（默认透明，点击后淡入） ============ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+}
+
+/* 画布全屏 */
 #space {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   display: block;
-  opacity: 0;
-  transition: opacity 1.8s ease;
-  z-index: 1;
+  background: radial-gradient(circle at 50% 20%, #14182b 0, #02030a 55%, #000 100%);
 }
 
-/* body.started 说明用户已经点击了“进入时间” */
-body.started #space {
-  opacity: 1;
-}
-
-/* ============ 进入时间按钮 ============ */
-
-#enter-btn {
+/* 进入时间按钮 */
+.enter-btn {
   position: fixed;
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.8rem;
-  color: rgba(255, 255, 255, 0.9);
-  border: 1.4px solid rgba(255, 255, 255, 0.5);
-  padding: 18px 42px;
-  cursor: pointer;
-  letter-spacing: 0.12em;
-  backdrop-filter: blur(14px);
-  background: rgba(255, 255, 255, 0.06);
+  padding: 14px 40px;
   border-radius: 999px;
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-soft);
+  transition: opacity 0.4s ease, transform 0.4s ease, background 0.3s ease,
+    box-shadow 0.3s ease;
   z-index: 20;
 }
 
-#enter-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translate(-50%, -50%) scale(1.05);
+.enter-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.9);
 }
 
-/* ============ 回到初始视角按钮 ============ */
+.enter-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -46%);
+}
 
-#resetView {
+/* 回到初始视角 */
+.reset-btn {
   position: fixed;
-  top: 32px;
   right: 32px;
-  padding: 10px 22px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
-  border: 1.2px solid rgba(255, 255, 255, 0.28);
+  top: 32px;
+  padding: 9px 18px;
   border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--accent-soft);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
-  font-size: 0.9rem;
-  letter-spacing: 0.1em;
-  backdrop-filter: blur(12px);
-  z-index: 15;
-  transition: opacity 0.6s ease, background 0.2s ease;
-}
-
-#resetView:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-/* ============ 底部提示文案 ============ */
-
-#hint {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.82);
-  letter-spacing: 0.12em;
-  padding: 6px 16px;
-  background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
+  z-index: 20;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.reset-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+
+/* 底部提示文案 */
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  padding: 10px 24px;
   border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.75);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.85);
+  z-index: 20;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.hint.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+}
+
+/* 鼠标交互提示（略微） */
+body.started {
+  cursor: grab;
+}
+body.dragging {
+  cursor: grabbing;
+}
+
+/* 对比面板：Before / Now */
+.compare {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.86);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.9);
+  z-index: 50;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.compare.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.compare-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compare-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.compare img {
+  width: 120px;
+  height: 68px;
+  border-radius: 10px;
+  object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  transition: opacity 0.6s ease;
-  z-index: 18;
+  background: #02030a;
 }
 
-/* ============ 通用隐藏状态 ============ */
-
-.hidden {
-  opacity: 0 !important;
-  pointer-events: none !important;
+.compare-close {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px 2px;
 }
 
-/* 取消 Mobile 点击高亮 */
-button, div, canvas {
-  -webkit-tap-highlight-color: transparent;
+/* 小屏幕适配 */
+@media (max-width: 640px) {
+  .reset-btn {
+    right: 16px;
+    top: 18px;
+  }
+  .hint,
+  .compare {
+    bottom: 24px;
+  }
+  .compare img {
+    width: 96px;
+    height: 58px;
+  }
 }
