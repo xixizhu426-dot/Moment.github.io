@@ -3,34 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>眨眼之间 · In the Blink of an Eye</title>
+  <title>眨眼之间 · 星空</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- 初始黑屏层 -->
-  <div id="intro-layer">
-    <button id="enter-time-btn">进入时间</button>
-  </div>
+  <!-- 进入按钮 -->
+  <div id="enter-btn">进入时间</div>
 
-  <!-- 星空粒子场景 -->
-  <div class="scene">
-    <div id="sky">
-      <div class="milky-way"></div>
-      <div id="stars"></div>
-      <div class="sky-glow"></div>
-    </div>
+  <!-- 星空画布 -->
+  <canvas id="starfield"></canvas>
 
-    <div class="bottom-text">眨眼之间。</div>
+  <!-- 回到初始视角 -->
+  <button id="resetView" class="hidden">回到初始视角</button>
 
-    <button id="reset-view-btn" title="回到最初视角">
-      ⟳
-    </button>
-  </div>
-
-  <!-- 背景音乐（请将 music.mp3 替换为你自己的音频文件路径） -->
-  <audio id="bgm" loop preload="auto">
-    <source src="music.mp3" type="audio/mpeg" />
-  </audio>
+  <!-- 背景音乐（你自己上传一个 mp3 并命名为 bgm.mp3） -->
+  <audio id="bgm" src="bgm.mp3" loop></audio>
 
   <script src="main.js"></script>
 </body>
