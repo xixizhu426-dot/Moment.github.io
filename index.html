@@ -4,7 +4,114 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>眨眼之间 · 星空轨道</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- 所有样式直接写在这里，避免外链 CSS 出问题 -->
+  <style>
+    /* ============ 页面基础设置：全屏 + 无滚动 ============ */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000; /* 首屏纯黑，点击后由 canvas 接管画面 */
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      user-select: none;
+    }
+
+    /* ============ 全屏 Canvas（默认透明，点击后淡入） ============ */
+    #space {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      opacity: 0;
+      transition: opacity 1.8s ease;
+      z-index: 1;
+    }
+
+    /* body.started 说明用户已经点击了“进入时间” */
+    body.started #space {
+      opacity: 1;
+    }
+
+    /* ============ 进入时间按钮 ============ */
+    #enter-btn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.8rem;
+      color: rgba(255, 255, 255, 0.9);
+      border: 1.4px solid rgba(255, 255, 255, 0.5);
+      padding: 18px 42px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      z-index: 20;
+    }
+
+    #enter-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    /* ============ 回到初始视角按钮 ============ */
+    #resetView {
+      position: fixed;
+      top: 32px;
+      right: 32px;
+      padding: 10px 22px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.9);
+      border: 1.2px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      backdrop-filter: blur(12px);
+      z-index: 15;
+      transition: opacity 0.6s ease, background 0.2s ease;
+    }
+
+    #resetView:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* ============ 底部提示文案 ============ */
+    #hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.82);
+      letter-spacing: 0.12em;
+      padding: 6px 16px;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(14px);
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      transition: opacity 0.6s ease;
+      z-index: 18;
+    }
+
+    /* ============ 通用隐藏状态 ============ */
+    .hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* 取消 Mobile 点击高亮 */
+    button, div, canvas {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
 </head>
 <body>
   <!-- 首屏：进入时间 -->
@@ -19,9 +126,10 @@
   <!-- 底部提示文案（初始隐藏） -->
   <div id="hint" class="hidden">改变视角，看看有什么不同</div>
 
-  <!-- 背景音乐：你可以在仓库根目录上传 bgm.mp3 -->
+  <!-- 背景音乐：如果你在仓库根目录上传 bgm.mp3，这里会自动播放 -->
   <audio id="bgm" src="bgm.mp3" loop></audio>
 
+  <!-- 所有 JS 也直接写在这里 -->
   <script>
     const canvas = document.getElementById("space");
     const ctx = canvas.getContext("2d");
@@ -47,7 +155,6 @@
     }
 
     // ========== 背景星空 ==========
-
     const STAR_COUNT = 2200;
     const stars = [];
 
@@ -75,7 +182,6 @@
     initStars();
 
     // ========== 轨道系统 ==========
-
     const DEG = Math.PI / 180;
 
     const orbits = [
@@ -93,7 +199,6 @@
     ];
 
     // ========== 投影：考虑相机旋转 + 前后距离 ==========
-
     function projectPoint(px, py, pz) {
       let x = px;
       let y = py;
@@ -127,7 +232,6 @@
     }
 
     // ========== epoch → 非常缓慢的参数变化 ==========
-
     function getTimeParams() {
       const MAX_EPOCH = 240; // 240 次“离开再回来”绕一圈
       const p = (epoch % MAX_EPOCH) / MAX_EPOCH; // 0~1
@@ -177,7 +281,6 @@
     }
 
     // ========== 交互：旋转、缩放 ==========
-
     let dragging = false;
     let lastX = 0, lastY = 0;
     let hasInteracted = false;
@@ -256,7 +359,6 @@
     });
 
     // ========== 主绘制循环 ==========
-
     function draw() {
       requestAnimationFrame(draw);
 
@@ -339,7 +441,6 @@
     }
 
     // ========== 按钮 & BGM & 首屏动画 ==========
-
     const enterBtn = document.getElementById("enter-btn");
     const resetBtn = document.getElementById("resetView");
     const bgm = document.getElementById("bgm");
