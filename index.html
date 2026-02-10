@@ -2,47 +2,32 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>眨眼之间 · 星轨</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- 星空 & 轨道画布 -->
-  <canvas id="space"></canvas>
-
-  <!-- 进入按钮 -->
-  <button id="enter-btn" class="enter-btn">
-    进入时间
-  </button>
-
-  <!-- 回到初始视角 -->
-  <button id="reset-btn" class="reset-btn hidden">
-    回到初始视角
-  </button>
-
-  <!-- 交互提示 -->
-  <div id="hint" class="hint hidden">
-    改变视角，看看有什么不同
+  <!-- 进入时间：全黑遮罩 -->
+  <div id="intro">
+    <button id="enter-btn">进入时间</button>
   </div>
 
-  <!-- Before / Now 对比面板 -->
-  <div id="compare-panel" class="compare hidden">
-    <div class="compare-col">
-      <div class="compare-label">Before</div>
-      <img id="img-before" alt="before view" />
-    </div>
-    <div class="compare-col">
-      <div class="compare-label">Now</div>
-      <img id="img-now" alt="now view" />
-    </div>
-    <button id="close-compare" class="compare-close">×</button>
+  <!-- 场景：星轨 + 行星 -->
+  <div id="scene">
+    <canvas id="space-canvas"></canvas>
+
+    <!-- 底部引导文字 -->
+    <div id="hint">改变视角，看看有什么不同</div>
+
+    <!-- 回到初始视角 -->
+    <button id="reset-view">回到初始视角</button>
   </div>
 
-  <!-- 背景音乐（可选：把 bgm.mp3 放在同级目录） -->
-  <audio id="bgm" loop src="bgm.mp3"></audio>
+  <!-- 背景音乐（静音自动加载，点击“进入时间”后尝试播放） -->
+  <audio id="bgm" loop>
+    <!-- 你可以把自己的音乐 mp3 上传到仓库里，例如 bgm.mp3，然后改成： -->
+    <!-- <source src="bgm.mp3" type="audio/mpeg" /> -->
+  </audio>
 
   <script src="main.js"></script>
 </body>
