@@ -31,7 +31,7 @@
       z-index: 1;
     }
 
-    /* 轨迹覆盖层：只画行星轨迹，用来“显示刚才发生过什么” */
+    /* ============ 行星轨迹覆盖层 ============ */
     #trail {
       position: fixed;
       top: 0;
@@ -111,16 +111,13 @@
       z-index: 18;
     }
 
-    /* ============ BEFORE / NOW 对比面板 ============ */
+    /* ============ 底部 BEFORE / NOW 对比条 ============ */
     #compare-panel {
       position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 30;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(18px);
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.35s ease;
@@ -128,47 +125,58 @@
 
     #compare-panel.active {
       opacity: 1;
-      pointer-events: auto;
+      pointer-events: none; /* 让事件透过去，不打断交互 */
     }
 
     .compare-inner {
-      position: relative;
-      max-width: min(900px, 92vw);
+      pointer-events: auto; /* 内部按钮可点击 */
+      max-width: min(720px, 92vw);
       width: 100%;
-      background: rgba(10, 12, 24, 0.92);
-      border-radius: 24px;
+      background: rgba(10, 12, 24, 0.95);
+      border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.16);
-      padding: 24px 28px 22px;
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+      padding: 10px 14px 10px;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.6);
       color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .compare-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
 
     .compare-title {
-      font-size: 0.95rem;
-      letter-spacing: 0.18em;
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      margin-bottom: 16px;
-      opacity: 0.9;
+      opacity: 0.85;
+      white-space: nowrap;
     }
 
     .compare-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+      gap: 10px;
+      align-items: center;
     }
 
     .compare-item {
       background: rgba(255, 255, 255, 0.03);
-      border-radius: 18px;
-      padding: 10px 10px 12px;
+      border-radius: 14px;
+      padding: 6px 6px 8px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
     }
 
     .compare-label {
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       opacity: 0.75;
@@ -176,31 +184,29 @@
 
     .compare-item img {
       width: 100%;
-      border-radius: 12px;
+      border-radius: 10px;
       display: block;
       background: #000;
     }
 
     #close-compare {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      width: 28px;
-      height: 28px;
+      width: 22px;
+      height: 22px;
       border-radius: 999px;
       border: 1px solid rgba(255, 255, 255, 0.22);
       background: rgba(255, 255, 255, 0.06);
       color: #fff;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     #close-compare:hover {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.18);
     }
 
     /* ============ 通用隐藏状态 ============ */
@@ -215,10 +221,13 @@
 
     @media (max-width: 640px) {
       .compare-inner {
-        padding: 18px 16px 16px;
+        padding: 8px 10px 8px;
       }
       .compare-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+      }
+      .compare-title {
+        letter-spacing: 0.18em;
       }
     }
   </style>
@@ -239,21 +248,23 @@
   <!-- 底部提示文案（初始隐藏） -->
   <div id="hint" class="hidden">改变视角，看看有什么不同</div>
 
-  <!-- BEFORE / NOW 对比面板 -->
+  <!-- 底部 BEFORE / NOW 对比条 -->
   <div id="compare-panel">
     <div class="compare-inner">
-      <div class="compare-title">VIEW · BEFORE / NOW</div>
+      <div class="compare-head">
+        <div class="compare-title">VIEW · BEFORE / NOW</div>
+        <button id="close-compare">×</button>
+      </div>
       <div class="compare-grid">
         <div class="compare-item">
           <div class="compare-label">BEFORE</div>
-          <img id="img-before" alt="Before view"/>
+          <img id="img-before" alt="Before view" />
         </div>
         <div class="compare-item">
           <div class="compare-label">NOW</div>
-          <img id="img-now" alt="Now view"/>
+          <img id="img-now" alt="Now view" />
         </div>
       </div>
-      <button id="close-compare">×</button>
     </div>
   </div>
 
@@ -276,18 +287,21 @@
     resize();
     window.addEventListener("resize", resize);
 
-    // 相机视角 & 缩放
+    // 相机视角 & 缩放（初始视角）
     let yaw = 0, pitch = 0;
     let targetYaw = 0, targetPitch = 0;
     let cameraDist = 2.6;
     let targetCameraDist = 2.6;
 
-    // 时间 epoch：只在“离开页面再回来”时 +1
+    // 时间 epoch：离开再回来才会改变（整体结构慢变）
     const EPOCH_KEY = "orbit_epoch_v4";
     let epoch = parseInt(localStorage.getItem(EPOCH_KEY) || "0", 10);
     function saveEpoch() {
       localStorage.setItem(EPOCH_KEY, String(epoch));
     }
+
+    // 全局时间：行星随停留时间慢慢运动
+    const startTime = performance.now();
 
     // ========== 背景星空 ==========
     const STAR_COUNT = 2200;
@@ -332,6 +346,8 @@
       { orbitIndex: 2, basePhase: 3.8, size: 0.014, color: "#ffd9a0" },
       { orbitIndex: 3, basePhase: 5.2, size: 0.016, color: "#ffe8ff" }
     ];
+    // 行星角速度（弧度/秒）——慢一点，让变化更“难察觉”
+    const planetSpeeds = [0.06, 0.045, 0.035, 0.028];
 
     // ========== 投影 ==========
     function projectPoint(px, py, pz) {
@@ -366,7 +382,7 @@
       };
     }
 
-    // ========== epoch → 非常缓慢的参数变化 ==========
+    // ========== epoch → 慢速结构变化 ==========
     function getTimeParams() {
       const MAX_EPOCH = 240;
       const p = (epoch % MAX_EPOCH) / MAX_EPOCH;
@@ -441,7 +457,6 @@
         if (trail.length < 2) return;
         trailCtx.beginPath();
         trail.forEach((p, i) => {
-          const alphaFactor = i / trail.length;
           if (i === 0) {
             trailCtx.moveTo(p.x, p.y);
           } else {
@@ -468,7 +483,6 @@
         hasInteracted = true;
         if (hint) hint.classList.add("hidden");
       }
-      // 一旦开始新一轮交互，就开启新的轨迹记录并清除旧轨迹可视化
       if (!recordingTrails) {
         startRecordingTrails();
       }
@@ -540,7 +554,7 @@
     });
 
     // ========== BEFORE / NOW 截图 ==========
-    let initialSnapshot = null;
+    let initialSnapshot = null;  // 刚进入时间后的“初始一眼”
 
     function captureSnapshot() {
       try {
@@ -555,23 +569,22 @@
     const imgBefore = document.getElementById("img-before");
     const imgNow = document.getElementById("img-now");
     const closeCompare = document.getElementById("close-compare");
+    let compareHideTimer = null;
 
     function openCompare(before, now) {
-      if (!before || !now) return;
       imgBefore.src = before;
       imgNow.src = now;
       comparePanel.classList.add("active");
+      if (compareHideTimer) clearTimeout(compareHideTimer);
+      // 几秒后自动淡出，不打断用户继续玩
+      compareHideTimer = setTimeout(() => {
+        comparePanel.classList.remove("active");
+      }, 4500);
     }
 
-    function closeComparePanel() {
+    closeCompare.addEventListener("click", () => {
       comparePanel.classList.remove("active");
-    }
-
-    closeCompare.addEventListener("click", closeComparePanel);
-    comparePanel.addEventListener("click", (e) => {
-      if (e.target === comparePanel) {
-        closeComparePanel();
-      }
+      if (compareHideTimer) clearTimeout(compareHideTimer);
     });
 
     // ========== 主绘制循环 ==========
@@ -584,6 +597,8 @@
       cameraDist += (targetCameraDist - cameraDist) * lerp;
 
       const { tiltGlobal, ecc, twistGlobal, phaseOffset } = getTimeParams();
+
+      const tSec = (performance.now() - startTime) / 1000; // 秒
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = "#02040b";
@@ -637,22 +652,23 @@
       ctx.arc(core.sx, core.sy, coreRadius * 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // 行星 + 记录行星在画面中的位置（用于轨迹）
+      // 行星 + 记录“在画面中的运动轨迹”
       planets.forEach((pl, index) => {
         const orbit = orbits[pl.orbitIndex];
-        const angle = pl.basePhase + phaseOffset;
+        // 行星角度 = 初始相位 + epoch 偏移 + 停留时间运动
+        const angle = pl.basePhase + phaseOffset + tSec * planetSpeeds[index];
         const pos = orbitPoint(orbit, angle, ecc, tiltGlobal, twistGlobal);
         const p = projectPoint(pos.x, pos.y, pos.z);
         if (p.depth > 3.2) return;
 
-        // 记录轨迹：只要在录制状态，就把屏幕坐标存起来
+        // 录制轨迹：记录屏幕坐标
         if (recordingTrails) {
           const trail = planetTrails[index];
           const last = trail[trail.length - 1];
           const dx = last ? p.sx - last.x : 999;
           const dy = last ? p.sy - last.y : 999;
           const dist2 = dx * dx + dy * dy;
-          if (!last || dist2 > 9) { // 距离变化足够大再记，避免太密
+          if (!last || dist2 > 9) { // 相隔足够大再记，避免太密
             if (trail.length > 600) trail.shift();
             trail.push({ x: p.sx, y: p.sy });
           }
@@ -682,13 +698,13 @@
       resetBtn.classList.remove("hidden");
       if (hint) hint.classList.remove("hidden");
 
-      // 开始录制行星轨迹
+      // 从初始视角开始录制行星轨迹
       startRecordingTrails();
 
-      // 稍等一会儿，等首次画面稳定后记录 BEFORE
+      // 等星空真正渲染一帧后，记录 BEFORE（刚进入时的一眼）
       setTimeout(() => {
         initialSnapshot = captureSnapshot();
-      }, 900);
+      }, 800);
 
       if (bgm) {
         bgm.volume = 0.5;
@@ -696,23 +712,26 @@
       }
     });
 
+    // 点击“回到初始视角”
     resetBtn.addEventListener("click", () => {
-      // 停止轨迹录制，画出这段时间的行星轨迹
+      // 1. 停止轨迹录制，画出这段时间行星的运动轨迹
       stopRecordingTrails();
       drawPlanetTrails();
 
-      // 截取 NOW 的画面，与初始的 BEFORE 对比
-      const nowShot = captureSnapshot();
-      if (initialSnapshot && nowShot) {
-        openCompare(initialSnapshot, nowShot);
-      }
+      // 2. 只重置相机视角，不动时间/行星
+      yaw = targetYaw = 0;
+      pitch = targetPitch = 0;
+      cameraDist = targetCameraDist = 2.6;
 
-      // 相机缓慢回到初始视角
-      targetYaw = 0;
-      targetPitch = 0;
-      targetCameraDist = 2.6;
+      // 3. 下一帧在“初始视角 + 当前行星位置”下截 NOW，并展示对比条
+      requestAnimationFrame(() => {
+        const nowShot = captureSnapshot();
+        if (initialSnapshot && nowShot) {
+          openCompare(initialSnapshot, nowShot);
+        }
+      });
 
-      // 等回到初始后，如果用户再次交互，再开始新的轨迹录制
+      // 4. 等用户下一次交互时，会重新 startRecordingTrails()
     });
 
     requestAnimationFrame(draw);
