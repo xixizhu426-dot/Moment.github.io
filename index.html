@@ -442,6 +442,7 @@
     // ========== 轨迹记录（按角度记录起点和终点） ==========
     let recordingTrails = false;
     let trailStartAngles = null;
+    let trailHideTimer = null;
 
     function startRecordingTrails() {
       trailStartAngles = getCurrentPlanetAngles();
@@ -516,7 +517,7 @@
     canvas.addEventListener("mousedown", (e) => {
       dragging = true;
       lastX = e.clientX;
-      lastY = e.clientY;
+      lastY = e.clientX;
       userInteracted();
     });
 
@@ -718,6 +719,7 @@
       resetBtn.classList.remove("hidden");
       if (hint) hint.classList.remove("hidden");
 
+      // 第一次：从“进入时间”开始记录行星运动
       startRecordingTrails();
       needInitialSnapshot = true;
 
@@ -731,23 +733,31 @@
     resetBtn.addEventListener("click", () => {
       if (!recordingTrails || !trailStartAngles) return;
 
+      // 1. 记录当前角度，得到 [上次开始记录 → 现在] 的行星运动
       const trailEndAngles = getCurrentPlanetAngles();
       stopRecordingTrails();
 
+      // 2. 相机回到初始视角（和 BEFORE 一致）
       yaw = targetYaw = INITIAL_YAW;
       pitch = targetPitch = INITIAL_PITCH;
       cameraDist = targetCameraDist = INITIAL_DIST;
 
+      // 3. 下一帧：画出这一段行星轨迹，截 NOW，展示对比条
       requestAnimationFrame(() => {
         drawPlanetTrailsFromAngles(trailStartAngles, trailEndAngles);
         const nowShot = captureSnapshot();
         if (initialSnapshot && nowShot) {
           openCompare(initialSnapshot, nowShot);
         }
-      });
 
-      // 如果想下一轮继续记录，这里可以再次 startRecordingTrails()
-      // 暂时保持单次体验
+        // 4. 轨迹 & 对比条短暂停留后消失，再开启下一轮记录
+        if (trailHideTimer) clearTimeout(trailHideTimer);
+        trailHideTimer = setTimeout(() => {
+          clearTrailCanvas();
+          // 重新开始新一轮的行星轨迹记录
+          startRecordingTrails();
+        }, 4500);
+      });
     });
 
     requestAnimationFrame(draw);
